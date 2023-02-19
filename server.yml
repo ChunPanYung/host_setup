@@ -1,0 +1,51 @@
+---
+- name: Install collections and roles
+  hosts: localhost
+  pre_tasks:
+    - name: Install community collections
+      community.general.ansible_galaxy_install:
+        type: collection
+        name: "{{ item }}"
+      loop:
+        - community.general
+        - community.docker
+
+    - name: Install custom collections
+      community.general.ansible_galaxy_install:
+        type: collection
+        name: "{{ item }}"
+      loop:
+        - git+https://github.com/ChunPanYung/ansi_colle.git#/server,dev
+        - git+https://github.com/ChunPanYung/ansi_colle.git#/os_build,dev
+
+- name: Execute roles
+  hosts: all
+  vars_prompt:
+    - name: ansible_become_pass
+      prompt: "BECOME password"
+
+  tasks:
+    - name: Configure Fedora
+      ansible.builtin.include_role:
+        name: ansi_colle.os_build.fedora
+      vars:
+        ansible_become: true
+
+    - name: Install docker
+      ansible.builtin.include_role:
+        name: ansi_colle.server.nextcloud
+      vars:
+        ansible_become: true
+
+    - name: Install dnf automatic
+      ansible.builtin.include_role:
+        name: ansi_colle.server.dnf_automatic
+      vars:
+        ansible_become: true
+
+  post_tasks:
+    - name: Finalize and configuration
+      ansible.builtin.include_role:
+        name: ansi_colle.server.config
+      vars:
+        ansible_become: true

@@ -1,0 +1,35 @@
+---
+- name: Install collections and roles
+  hosts: localhost
+  vars_prompt:
+    - name: ansible_become_pass
+      prompt: "BECOME password"
+
+  pre_tasks:
+    - name: Install community collections
+      community.general.ansible_galaxy_install:
+        type: collection
+        name: "{{ item }}"
+      loop:
+        - community.general
+        - community.docker
+
+    - name: Install custom collections
+      community.general.ansible_galaxy_install:
+        type: collection
+        name: "{{ item }}"
+      loop:
+        - git+https://github.com/ChunPanYung/ansi_colle.git#/server,dev
+        - git+https://github.com/ChunPanYung/ansi_colle.git#/shared,dev
+        - git+https://github.com/ChunPanYung/ansi_colle.git#/linux,dev
+
+  tasks:
+    - name: Install docker
+      ansible.builtin.include_role:
+        name: ansi_colle.server.docker
+      vars:
+        ansible_become: true
+
+    - name: Install docker
+      ansible.builtin.include_role:
+        name: ansi_colle.linux.npm
